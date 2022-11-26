@@ -1,0 +1,120 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>接口检测 - 万讯</title>
+	<link rel="shortcut icon" href="../favicon.ico"/>
+    <link href="asset/check.css" rel="stylesheet" type="text/css">
+    <script type="text/javascript" src="jquery/1.12.4/jquery.min.js"></script>
+    <script type="text/javascript" src="js/tv/player.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script type="text/javascript">
+    var checked=false;
+        String.prototype.hashCode = function() {
+          var hash = 0, i, chr;
+          if (this.length === 0) return hash;
+          for (i = 0; i < this.length; i++) {
+            chr   = this.charCodeAt(i);
+            hash  = ((hash << 5) - hash) + chr;
+            hash |= 0; // Convert to 32bit integer
+          }
+          return (hash & 0x7FFFFFFF);
+        //   return hash;
+        };
+        $(function(){
+            let html = ''
+            jks.forEach((item,index)=>{
+                let id = item.title.hashCode()
+                html+=`<div class="lbl">
+                    <label for="name" id="${id}" class="valid-none" data-title="${item.title}" data-url="${item.url}">${item.title}<b style="color:red">(待检测)</b></label>
+                </div>
+                <div class="ctrl">
+                    <input type="text" name="name" data-required="true" data-validation="text"
+                        data-msg="Invalid Name" placeholder="Ex: John Donga" value="${item.url}" disabled>
+                </div>`
+            })
+            $("#formbody").append(html)
+            letcheckUrl = function (url) {
+                  return new Promise(function (resolve, reject) {
+                    $.ajax({
+                      url: url,
+                      type: 'GET',
+                      dataType: "jsonp", //跨域采用jsonp方式
+                      complete: (response)=> {
+                        resolve(true)
+                        if(response.status==200)
+                          resolve(true)
+                        else
+                          resolve(false)
+                      }
+                      
+                    });
+                  });
+            }
+            $("#start_check").click(function(){
+                if(!jks){
+                    alert(`接口未载入`)
+                }
+                checked=true;
+                jks.forEach((item,index)=>{
+                    let id = item.title.hashCode()
+                    letcheckUrl(item.url).then((res)=>{
+                    $("#"+id).html(`${item.title}<b style="color:green">(正常)</b>`).removeClass("valid-none").addClass("valid-true")
+                    })
+                })
+            })
+            $("#report").click(function(){
+                if(!checked){
+                    Swal.fire('还没检测过哦')
+                    return
+                }
+                let unvalids=$(".valid-none")
+                if(unvalids){
+                    let unvalid_infos='';
+                    $(unvalids).each((index,item)=>{
+                        unvalid_infos+=`${$(item).data('title')}:${$(item).data('url')}<br>`
+                        })
+                    unvalid_infos.trim(',')
+                    Swal.fire({
+                      title: '发现异常',
+                      html: `本次检测到[${unvalids.length}]个接口异常,是否要上报？<br>请复制下列信息:<br>${unvalid_infos}`,
+                      icon: 'warning',
+                      showCancelButton: true,
+                      confirmButtonColor: '#3085d6',
+                      cancelButtonColor: '#d33',
+                      confirmButtonText: '好的,出份力',
+                      cancelButtonText:'算了我才不管'
+                    }).then((result) => {
+                      if (result.isConfirmed) {
+                        window.open('https://support.qq.com/products/460222')
+                      }
+                    })
+                }else{
+                    Swal.fire('没检测到失效接口哦')
+                }
+            })
+        })
+    </script>
+</head>
+<body>
+    <section id="getintouch" class="fadeInRightBig animated">
+        <div class="container" style="border-bottom: 0;">
+            <h1>
+                <span>接口检测 — WANXUN.VIP!</span>
+            </h1>
+        </div>
+        <div class="container">
+            <form class="contact" action="#" method="post" id="form">
+                        <div class="row  clearfix">
+                <div class="span10 offset2">
+                    <input type="button" class="submit" value="检测" id="start_check">
+                    <input type="button" class="submit" value="上报结果" id="report">
+                </div>
+            </div>
+            <div class="row clearfix" id="formbody">
+            </div>
+            </form>
+        </div>
+    </section>
+</body>
+</html>
